@@ -60,9 +60,8 @@ behaviour changes worth knowing about.
 - **GitHub Actions CI**: syntax checks on PHP 7.2–8.3, tests on 7.4–8.3,
   PHPStan, php-cs-fixer, module structure validation and a packaged zip.
 - **Docker Compose stack** with PrestaShop 1.7.8, 8.1 and 9.0 profiles.
-- **Dual-remote release process.** Development stays on Bitbucket; pushing
-  `main` to GitHub tags the module version and publishes a release. See
-  `RELEASING.md` and `scripts/publish.sh`.
+- **Automated releases.** Pushing `main` tags the module's version and
+  publishes a GitHub release with the packaged zip attached.
 
 ### Changed
 

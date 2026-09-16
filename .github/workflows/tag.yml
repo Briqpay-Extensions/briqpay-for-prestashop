@@ -2,9 +2,9 @@ name: Tag
 
 # Tagging is driven by the module's own version number.
 #
-# Day-to-day development happens on Bitbucket. Pushing main to GitHub is what
-# makes a release: this workflow reads $this->version from the module, and when
-# that version has no tag yet it creates one and hands off to release.yml.
+# Pushing main is what makes a release: this workflow reads $this->version
+# from the module, and when that version has no tag yet it creates one and
+# hands off to release.yml.
 #
 # Bumping the version in a commit is therefore the act of cutting a release.
 
