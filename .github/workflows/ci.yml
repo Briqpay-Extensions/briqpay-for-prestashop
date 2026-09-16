@@ -1,0 +1,384 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+
+  # The module has to load on every PHP version across the supported
+  # PrestaShop range: 7.2 (1.7.6) through 8.3 (PrestaShop 9).
+  syntax:
+    name: PHP ${{ matrix.php }} syntax
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.2', '7.4', '8.0', '8.1', '8.2', '8.3']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, json, mbstring
+          coverage: none
+
+      - name: Lint every PHP file
+        run: |
+          find briqpay_payment_module -name '*.php' -print0 \
+            | xargs -0 -n1 -P4 php -l
+
+  tests:
+    name: Tests on PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.0', '8.1', '8.2', '8.3']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, json, mbstring
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ matrix.php }}-${{ hashFiles('composer.json') }}
+          restore-keys: composer-${{ matrix.php }}-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit --testdox
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: curl, json, mbstring
+          coverage: xdebug
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run PHPUnit with coverage
+        run: vendor/bin/phpunit --coverage-text --coverage-clover=build/clover.xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: build/clover.xml
+          retention-days: 14
+
+  static-analysis:
+    name: Static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: curl, json, mbstring
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+
+  coding-standards:
+    name: Coding standards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: curl, json, mbstring
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Check formatting
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff --using-cache=no
+
+  module-validation:
+    name: Module structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+
+      - name: Check the declared version is consistent
+        run: |
+          MAIN=$(grep -oP "(?<=\\\$this->version = ')[^']+" \
+            briqpay_payment_module/briqpay_payment_module.php)
+          XML=$(grep -oP '(?<=<version><!\[CDATA\[)[^\]]+' \
+            briqpay_payment_module/config.xml)
+
+          echo "briqpay_payment_module.php: $MAIN"
+          echo "config.xml:                 $XML"
+
+          if [ "$MAIN" != "$XML" ]; then
+            echo "::error::Version mismatch between the module file and config.xml"
+            exit 1
+          fi
+
+      - name: Check every directory is protected from listing
+        run: |
+          MISSING=0
+          while IFS= read -r dir; do
+            if [ ! -f "$dir/index.php" ]; then
+              echo "::error::Missing index.php in $dir"
+              MISSING=1
+            fi
+          done < <(find briqpay_payment_module -type d -not -path '*/.*')
+
+          exit $MISSING
+
+      - name: Check no debugging statements were left behind
+        run: |
+          if grep -rnE '\b(var_dump|print_r|dd|die\()' \
+               --include='*.php' briqpay_payment_module/src \
+               briqpay_payment_module/controllers; then
+            echo "::error::Debugging statement found"
+            exit 1
+          fi
+
+  # Installs the module into a real PrestaShop.
+  #
+  # This exists because the unit suite structurally cannot catch a method that
+  # collides with one on PrestaShop's own Module class: the stubs do not declare
+  # those methods, so a signature clash is invisible until PHP loads the class
+  # against the real parent. Exactly that shipped once -- getContainer() against
+  # ModuleCore::getContainer(): ContainerInterface -- and was a fatal on boot.
+  install-smoke:
+    name: Install into PrestaShop ${{ matrix.ps }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ps: '8.1'
+            image: 'prestashop/prestashop:8.1-apache'
+          - ps: '1.7.8'
+            image: 'prestashop/prestashop:1.7.8-apache'
+
+    services:
+      db:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: prestashop
+          MARIADB_USER: prestashop
+          MARIADB_PASSWORD: prestashop
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s --health-timeout=5s --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start PrestaShop with the module mounted
+        run: |
+          docker run -d --name ps \
+            --network host \
+            -e DB_SERVER=127.0.0.1 \
+            -e DB_NAME=prestashop \
+            -e DB_USER=prestashop \
+            -e DB_PASSWD=prestashop \
+            -e PS_INSTALL_AUTO=1 \
+            -e PS_ERASE_DB=0 \
+            -e PS_DEV_MODE=0 \
+            -e PS_DOMAIN=localhost:8080 \
+            -e PS_FOLDER_ADMIN=admin-dev \
+            -e ADMIN_MAIL=admin@briqpay.test \
+            -e ADMIN_PASSWD=briqpay123 \
+            -e PS_ENABLE_SSL=0 \
+            -v "$PWD/briqpay_payment_module:/var/www/html/modules/briqpay_payment_module" \
+            "${{ matrix.image }}"
+
+      - name: Wait for the install to finish
+        run: |
+          for i in $(seq 1 120); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ || true)
+            if [ "$code" = "200" ] || [ "$code" = "302" ]; then
+              echo "PrestaShop is up after ${i}0s"
+              exit 0
+            fi
+            docker inspect -f '{{.State.Running}}' ps | grep -q true || {
+              echo "::error::PrestaShop container stopped"; docker logs ps --tail 60; exit 1;
+            }
+            sleep 10
+          done
+          echo "::error::PrestaShop did not come up in time"
+          docker logs ps --tail 80
+          exit 1
+
+      - name: Fail on any PHP fatal during boot
+        run: |
+          if docker logs ps 2>&1 | grep -iE "PHP Fatal error"; then
+            echo "::error::A PHP fatal occurred while PrestaShop booted"
+            exit 1
+          fi
+          echo "No fatals during boot."
+
+      - name: Install the module
+        run: |
+          docker exec -u www-data ps php bin/console prestashop:module install \
+            briqpay_payment_module 2>&1 | tee install.log
+          grep -qi "succeeded" install.log || {
+            echo "::error::Module install did not report success"; exit 1;
+          }
+
+      - name: Assert the schema and hooks landed
+        run: |
+          mysql() { docker run --rm --network host mariadb:10.11 \
+            mysql -h 127.0.0.1 -uprestashop -pprestashop prestashop -N -B -e "$1" 2>/dev/null; }
+
+          TABLES=$(mysql "SHOW TABLES LIKE 'ps_briqpay%';" | wc -l)
+          echo "briqpay tables: $TABLES"
+          [ "$TABLES" -eq 3 ] || { echo "::error::Expected 3 tables, found $TABLES"; exit 1; }
+
+          HOOKS=$(mysql "SELECT COUNT(*) FROM ps_hook_module hm
+            JOIN ps_module m ON m.id_module = hm.id_module
+            WHERE m.name = 'briqpay_payment_module';")
+          echo "registered hooks: $HOOKS"
+          [ "$HOOKS" -ge 7 ] || { echo "::error::Expected at least 7 hooks, found $HOOKS"; exit 1; }
+
+      - name: Exercise the module against the real PrestaShop classes
+        run: |
+          cat > smoke.php <<'PHP'
+          <?php
+          require '/var/www/html/config/config.inc.php';
+
+          $module = Module::getInstanceByName('briqpay_payment_module');
+          if (!$module) { fwrite(STDERR, "module did not load\n"); exit(1); }
+
+          printf("loaded %s v%s\n", get_class($module), $module->version);
+
+          // Without credentials the module must decline cleanly, never fatal.
+          $ctx = Context::getContext();
+          $ctx->cart = new Cart();
+          $ctx->cart->id_currency = (int) Configuration::get('PS_CURRENCY_DEFAULT');
+          $ctx->cart->id_lang = (int) Configuration::get('PS_LANG_DEFAULT');
+          $ctx->cart->add();
+
+          $options = $module->hookPaymentOptions(['cart' => $ctx->cart]);
+          printf("payment options: %d\n", count($options));
+
+          $module->hookHeader();
+          $module->hookDisplayPaymentTop();
+
+          $services = $module->getBriqpayServices();
+          foreach ([
+              'getClient', 'getSessionManager', 'getOrderCreator', 'getOrderManager',
+              'getHostedPageManager', 'getWebhookHandler', 'getSessionValidator',
+              'getOrderRepository', 'getSessionRepository',
+          ] as $m) {
+              printf("  %s -> %s\n", $m, get_class($services->$m()));
+          }
+
+          $ctx->cart->delete();
+          echo "smoke OK\n";
+          PHP
+          docker cp smoke.php ps:/tmp/smoke.php
+          docker exec -u www-data ps php /tmp/smoke.php
+
+      - name: Check the webhook endpoint answers
+        run: |
+          URL="http://localhost:8080/index.php?fc=module&module=briqpay_payment_module&controller=webhook"
+
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$URL" \
+            -H 'Content-Type: application/json' -d 'not json')
+          echo "invalid JSON -> $code"
+          [ "$code" = "400" ] || { echo "::error::Expected 400, got $code"; exit 1; }
+
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$URL" \
+            -H 'Content-Type: application/json' -d '{"event":"order_status"}')
+          echo "missing sessionId -> $code"
+          [ "$code" = "400" ] || { echo "::error::Expected 400, got $code"; exit 1; }
+
+      - name: Uninstall cleanly
+        run: |
+          docker exec -u www-data ps php bin/console prestashop:module uninstall \
+            briqpay_payment_module 2>&1 | tee uninstall.log
+          grep -qi "succeeded" uninstall.log || {
+            echo "::error::Module uninstall did not report success"; exit 1;
+          }
+
+      - name: Fail on any PHP fatal at all
+        if: always()
+        run: |
+          if docker logs ps 2>&1 | grep -iE "PHP Fatal error"; then
+            echo "::error::A PHP fatal occurred during the smoke test"
+            exit 1
+          fi
+          echo "No fatals."
+
+      - name: Dump the container log on failure
+        if: failure()
+        run: docker logs ps --tail 200
+
+  package:
+    name: Build installable zip
+    runs-on: ubuntu-latest
+    needs: [syntax, tests, static-analysis, coding-standards, module-validation, install-smoke]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the module archive
+        run: |
+          mkdir -p build
+          zip -r "build/briqpay_payment_module.zip" briqpay_payment_module \
+            -x '*.git*' \
+            -x '*/.vscode/*' \
+            -x '*/.idea/*' \
+            -x '*/node_modules/*' \
+            -x '*/.DS_Store'
+
+      - name: Upload the archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: briqpay_payment_module
+          path: build/briqpay_payment_module.zip
+          retention-days: 30

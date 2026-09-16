@@ -1,0 +1,52 @@
+{
+    "name": "briqpay/prestashop-payment-module",
+    "description": "Briqpay payments for PrestaShop 1.7, 8 and 9.",
+    "type": "prestashop-module",
+    "license": "AFL-3.0",
+    "authors": [
+        {
+            "name": "Briqpay AB",
+            "email": "hello@briqpay.com",
+            "homepage": "https://briqpay.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.2",
+        "ext-curl": "*",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.13",
+        "phpstan/phpstan": "^2.2",
+        "phpunit/phpunit": "^9.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Briqpay\\Payment\\": "briqpay_payment_module/src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Briqpay\\Payment\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:coverage": "phpunit --coverage-text --coverage-html build/coverage",
+        "lint": "php-cs-fixer fix --dry-run --diff",
+        "lint:fix": "php-cs-fixer fix",
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "check": [
+            "@lint",
+            "@analyse",
+            "@test"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "platform": {
+            "php": "7.4"
+        }
+    }
+}

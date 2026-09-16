@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+    <name>briqpay_payment_module</name>
+    <displayName><![CDATA[Briqpay Payments]]></displayName>
+    <version><![CDATA[2.0.0]]></version>
+    <description><![CDATA[Accept invoice, card, direct bank and BNPL payments through a single Briqpay integration.]]></description>
+    <author><![CDATA[Briqpay]]></author>
+    <tab><![CDATA[payments_gateways]]></tab>
+	<confirmUninstall><![CDATA[Are you sure you want to uninstall Briqpay? Your existing payment records will be kept.]]></confirmUninstall>
+    <is_configurable>1</is_configurable>
+    <need_instance>0</need_instance>
+</module>

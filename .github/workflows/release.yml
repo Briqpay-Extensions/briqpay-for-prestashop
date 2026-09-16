@@ -1,0 +1,94 @@
+name: Release
+
+# Two ways in:
+#   - a human pushes a tag directly, or
+#   - tag.yml creates the tag from the module version and calls this workflow.
+#
+# The second path needs `workflow_call` because a tag pushed by GITHUB_TOKEN
+# does not trigger further workflow runs -- GitHub suppresses that to prevent
+# recursion, so a plain `on: push: tags` would never fire for it.
+on:
+  push:
+    tags: ['v*']
+  workflow_call:
+    inputs:
+      tag:
+        description: The tag to build and publish.
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish the module archive
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve the tag
+        id: meta
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "Releasing $TAG"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.meta.outputs.tag }}
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: curl, json, mbstring
+          coverage: none
+
+      - name: Check the tag matches the module version
+        run: |
+          TAG_VERSION="${{ steps.meta.outputs.version }}"
+          MAIN=$(grep -oP "(?<=\\\$this->version = ')[^']+" \
+            briqpay_payment_module/briqpay_payment_module.php)
+          XML=$(grep -oP '(?<=<version><!\[CDATA\[)[^\]]+' \
+            briqpay_payment_module/config.xml)
+
+          echo "tag:        $TAG_VERSION"
+          echo "module:     $MAIN"
+          echo "config.xml: $XML"
+
+          if [ "$TAG_VERSION" != "$MAIN" ] || [ "$MAIN" != "$XML" ]; then
+            echo "::error::Version mismatch between the tag, the module file and config.xml"
+            exit 1
+          fi
+
+      - name: Check the changelog has an entry
+        run: |
+          if ! grep -q "^## \[${{ steps.meta.outputs.version }}\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no [${{ steps.meta.outputs.version }}] section"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run the test suite
+        run: vendor/bin/phpunit
+
+      - name: Build the module archive
+        run: |
+          mkdir -p build
+          zip -r "build/briqpay_payment_module-${{ steps.meta.outputs.tag }}.zip" \
+            briqpay_payment_module \
+            -x '*.git*' \
+            -x '*/.vscode/*' \
+            -x '*/.idea/*' \
+            -x '*/node_modules/*' \
+            -x '*/.DS_Store'
+
+      - name: Create the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          files: build/briqpay_payment_module-*.zip
+          generate_release_notes: true
+          draft: false

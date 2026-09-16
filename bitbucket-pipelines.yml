@@ -1,0 +1,66 @@
+# Bitbucket Pipelines.
+#
+# dev  -- every push runs the same checks as GitHub's CI workflow (lint,
+#         static analysis, tests). Bitbucket is where day-to-day development
+#         happens, so problems are caught immediately instead of only when a
+#         release is cut.
+#
+# prod -- merging dev into prod is the deliberate act of cutting a release
+#         (reviewable as a pull request before it happens). The pipeline then
+#         runs the checks again and, if they pass, runs `scripts/publish.sh
+#         prod` unattended to push a docker/-stripped snapshot to GitHub.
+#         From there GitHub's own Actions (tag.yml, release.yml) take over:
+#         they tag the version and publish the release archive independently
+#         -- this pipeline never talks to GitHub's Actions API, only to the
+#         git remote.
+#
+#         Requires a GitHub deploy key. See RELEASING.md for the one-time
+#         setup (Repository settings -> Pipelines -> SSH keys, plus a deploy
+#         key with write access on the GitHub repo).
+#
+# There is deliberately no `pull-requests` trigger. Bitbucket fires branch
+# and pull-request pipelines independently, so a PR from `dev` would run the
+# checks a second time on the exact same commit the `dev` push already
+# checked -- pure duplication given the only PRs in this repo are dev->prod.
+# Add one back (scoped to whatever isn't dev/prod) if feature branches start
+# merging into dev.
+
+image: composer:2
+
+definitions:
+  caches:
+    composer: /root/.composer/cache
+
+  steps:
+    - step: &checks
+        name: Lint, static analysis, tests
+        caches:
+          - composer
+        script:
+          - composer install --no-interaction --prefer-dist
+          - composer check
+
+pipelines:
+  branches:
+    dev:
+      - step: *checks
+
+    prod:
+      - step: *checks
+      - step:
+          name: Publish to GitHub
+          caches:
+            - composer
+          script:
+            # composer.lock is already resolved and cached from the checks
+            # step above (same pipeline run); `vendor/` is not persisted
+            # between steps, so reinstall from it rather than passing an
+            # artifact -- cheap, since the composer cache carries over.
+            - composer install --no-interaction --prefer-dist
+            - apk add --no-cache openssh-client >/dev/null
+            - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+            - ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2>/dev/null
+            - git config user.name "Briqpay Release Bot"
+            - git config user.email "hello@briqpay.com"
+            - git remote add github git@github.com:Briqpay-Extensions/briqpay-for-prestashop.git
+            - CI=true ./scripts/publish.sh prod

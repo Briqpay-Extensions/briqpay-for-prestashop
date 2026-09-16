@@ -1,0 +1,39 @@
+# Static analysis for the Briqpay PrestaShop module.
+#
+# PrestaShop's own classes are not installed in CI, so the test stubs are
+# scanned to give PHPStan their shape. The stubs are deliberately partial --
+# anything they do not declare is allowed through by the ignore rules below.
+
+parameters:
+    level: 5
+
+    # Explicit, rather than left for PHPStan to infer from composer.json's
+    # config.platform.php. That setting exists only to keep composer.lock
+    # installable on CI's oldest floor (7.4) -- a concern of its own, unrelated
+    # to which PHP version PHPStan should assume when typing built-ins -- and
+    # letting it leak into analysis produced a real inconsistency: curl_init()
+    # typed as returning a resource under a 7.4 target, while curl_getinfo()'s
+    # bundled stub for the same target still wanted a differently-tagged one,
+    # failing a call that is actually correct. This matches the PHP version CI
+    # runs static-analysis under.
+    phpVersion: 80100
+
+    paths:
+        - briqpay_payment_module/src
+
+    scanFiles:
+        - tests/Stub/PrestaShopStubs.php
+
+    bootstrapFiles:
+        - tests/phpstan-bootstrap.php
+
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
+
+    ignoreErrors:
+        # The stubs only model the members the module actually uses.
+        - '#Call to an undefined method (Module|PaymentModule|Cart|Order|Context|Link)::#'
+        - '#Access to an undefined property (Module|PaymentModule|Cart|Order|Context|Link)::#'
+        # PrestaShop's Db::getRow() is documented as mixed; the repositories
+        # narrow it themselves.
+        - '#^Cannot access offset .* on array\|false\.$#'

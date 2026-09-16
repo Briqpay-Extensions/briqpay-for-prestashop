@@ -1,0 +1,33 @@
+# Dependencies
+/vendor/
+node_modules/
+
+# Build output
+/build/
+/dist/
+*.zip
+
+# Tooling caches
+.phpunit.result.cache
+.php-cs-fixer.cache
+.phpstan.cache/
+
+# Local configuration
+/docker/.env
+/docker/htdocs/
+phpunit.xml
+phpstan.neon
+.php-cs-fixer.php
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Scratch
+curl_examples.txt
+*.log

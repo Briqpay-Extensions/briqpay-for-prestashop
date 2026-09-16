@@ -1,0 +1,98 @@
+/**
+ * Copyright since 2020 Briqpay AB
+ *
+ * @author    Briqpay AB <hello@briqpay.com>
+ * @copyright Since 2020 Briqpay AB
+ * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
+ *
+ * Storefront styles for the embedded Briqpay payment step.
+ */
+
+.briqpay-checkout {
+  margin: 0;
+  padding: 0;
+}
+
+.briqpay-checkout__frame {
+  min-height: 260px;
+}
+
+.briqpay-checkout__frame iframe {
+  width: 100%;
+  border: 0;
+  display: block;
+}
+
+.briqpay-checkout__notice {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  border: 1px solid #f5c6cb;
+  background: #fdf3f4;
+  color: #8a2b32;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.briqpay-checkout__notice[hidden] {
+  display: none;
+}
+
+/*
+ * Takeover mode: Briqpay owns the payment step.
+ *
+ * The classic theme lays each option out as three siblings, not a nesting:
+ *
+ *   <div><div class="payment-option">radio + label</div></div>
+ *   <div class="js-additional-information">...</div>
+ *   <div class="js-payment-option-form">  <- the module's own form lives here
+ *
+ * so hiding ".payment-option" alone leaves every other module's form behind,
+ * and the Briqpay form cannot be reached by descending from it. Everything is
+ * hidden, then the one form marked by the script is put back.
+ */
+.briqpay-takeover .payment-options > div,
+.briqpay-takeover .payment-options .payment-option,
+.briqpay-takeover .payment-options .js-additional-information,
+.briqpay-takeover .payment-options .js-payment-option-form {
+  display: none !important;
+}
+
+.briqpay-takeover .payment-options .js-payment-option-form.briqpay-payment-form {
+  display: block !important;
+  margin: 0;
+  padding: 0;
+}
+
+/* The purchase completes inside the iframe, so the native submit would be a
+   second, competing way to place the same order. */
+.briqpay-takeover #payment-confirmation {
+  display: none !important;
+}
+
+/* The terms block stays visible: it gates the iframe rather than the button,
+   and the script moves it above the iframe so the control sits over the thing
+   it unblocks. */
+.briqpay-takeover #conditions-to-approve {
+  display: block;
+  margin: 0 0 1.25rem;
+}
+
+.briqpay-takeover #conditions-to-approve.briqpay-terms--hoisted {
+  padding: 0.875rem 1rem;
+  background: #f7f8fa;
+  border: 1px solid #e4e7ec;
+  border-radius: 6px;
+}
+
+.briqpay-takeover #conditions-to-approve ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 767px) {
+  .briqpay-checkout__frame {
+    min-height: 320px;
+  }
+}

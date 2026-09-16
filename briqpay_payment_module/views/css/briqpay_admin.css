@@ -1,0 +1,477 @@
+/**
+ * Copyright since 2020 Briqpay AB
+ *
+ * @author    Briqpay AB <hello@briqpay.com>
+ * @copyright Since 2020 Briqpay AB
+ * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
+ *
+ * Back office styling for the Briqpay configuration page and order panel.
+ *
+ * Scoped under .briqpay-admin (and the sibling selectors for the HelperForm
+ * output, which the module does not control the markup of) so nothing here
+ * leaks into the rest of the PrestaShop admin.
+ */
+
+.briqpay-admin {
+  --bq-ink: #12141a;
+  --bq-muted: #6b7280;
+  --bq-line: #e4e7ec;
+  --bq-surface: #ffffff;
+  --bq-canvas: #f7f8fa;
+  --bq-accent: #3b5bfd;
+  --bq-accent-soft: #eef1ff;
+  --bq-positive: #0f7b5f;
+  --bq-positive-soft: #e6f5f0;
+  --bq-warning: #9a6410;
+  --bq-warning-soft: #fdf4e3;
+  --bq-radius: 10px;
+
+  color: var(--bq-ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------------------ hero */
+
+.briqpay-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #ffffff 0%, var(--bq-accent-soft) 100%);
+  border: 1px solid var(--bq-line);
+  border-radius: var(--bq-radius);
+}
+
+.briqpay-hero__identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.briqpay-hero__logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.briqpay-hero__title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--bq-ink);
+}
+
+.briqpay-hero__subtitle {
+  margin: 0;
+  color: var(--bq-muted);
+  font-size: 14px;
+}
+
+.briqpay-hero__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------------------------------------------------------------- badges */
+
+.briqpay-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.briqpay-badge--live {
+  background: var(--bq-positive-soft);
+  color: var(--bq-positive);
+}
+
+.briqpay-badge--test {
+  background: var(--bq-warning-soft);
+  color: var(--bq-warning);
+}
+
+.briqpay-badge--version {
+  background: var(--bq-surface);
+  border: 1px solid var(--bq-line);
+  color: var(--bq-muted);
+  text-transform: none;
+}
+
+/* -------------------------------------------------------------- callouts */
+
+.briqpay-callout {
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  border-radius: var(--bq-radius);
+  border-left: 3px solid transparent;
+  font-size: 14px;
+}
+
+.briqpay-callout--warning {
+  background: var(--bq-warning-soft);
+  border-left-color: var(--bq-warning);
+  color: var(--bq-warning);
+}
+
+.briqpay-callout--success {
+  background: var(--bq-positive-soft);
+  border-left-color: var(--bq-positive);
+  color: var(--bq-positive);
+}
+
+/* ----------------------------------------------------------------- cards */
+
+.briqpay-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.briqpay-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background: var(--bq-surface);
+  border: 1px solid var(--bq-line);
+  border-radius: var(--bq-radius);
+}
+
+.briqpay-card__title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--bq-ink);
+}
+
+.briqpay-card__body {
+  margin: 0 0 14px;
+  color: var(--bq-muted);
+  font-size: 13px;
+  flex: 1 1 auto;
+}
+
+.briqpay-card__action {
+  align-self: flex-start;
+  margin-bottom: 10px;
+}
+
+.briqpay-card__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--bq-muted);
+}
+
+/* ------------------------------------------------------------ copy field */
+
+.briqpay-copyfield {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.briqpay-copyfield__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--bq-line);
+  border-radius: 6px;
+  background: var(--bq-canvas);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--bq-ink);
+}
+
+.briqpay-copyfield__button {
+  flex: 0 0 auto;
+}
+
+/* A stored secret's masked placeholder should read as content, not as the
+   usual greyed-out hint that means "nothing here". */
+#module_form .briqpay-secret--stored::placeholder {
+  color: #4a5160;
+  opacity: 1;
+  letter-spacing: 0.08em;
+}
+
+/* --------------------------------------------- HelperForm panel refresh */
+
+/*
+ * HelperForm emits fixed Bootstrap-3 markup that the module cannot template.
+ * These rules only soften its chrome so the generated panels sit alongside
+ * the cards above without looking like a different decade.
+ */
+#module_form .panel {
+  border: 1px solid var(--bq-line);
+  border-radius: var(--bq-radius);
+  box-shadow: none;
+  margin-bottom: 16px;
+}
+
+#module_form .panel .panel-heading {
+  background: var(--bq-surface);
+  border-bottom: 1px solid var(--bq-line);
+  border-radius: var(--bq-radius) var(--bq-radius) 0 0;
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #12141a;
+  text-transform: none;
+}
+
+#module_form .panel .panel-heading i {
+  color: var(--bq-accent);
+  margin-right: 8px;
+}
+
+#module_form .form-group {
+  padding: 4px 0;
+  margin-bottom: 12px;
+}
+
+#module_form .form-control:focus {
+  border-color: var(--bq-accent);
+  box-shadow: 0 0 0 3px rgba(59, 91, 253, 0.12);
+}
+
+#module_form .help-block,
+#module_form .form-group .help-block {
+  color: #6b7280;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+#module_form .panel-footer {
+  background: #f7f8fa;
+  border-top: 1px solid var(--bq-line);
+  border-radius: 0 0 var(--bq-radius) var(--bq-radius);
+}
+
+/* --------------------------------------------------------- order panel */
+
+.briqpay-order-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.briqpay-order-panel__heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.briqpay-order-panel__logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.briqpay-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  background: var(--bq-canvas);
+  border-radius: var(--bq-radius);
+}
+
+.briqpay-summary__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.briqpay-summary__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--bq-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.briqpay-summary__value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--bq-ink);
+  overflow-wrap: anywhere;
+}
+
+.briqpay-summary__value--captured {
+  color: var(--bq-positive);
+}
+
+.briqpay-summary__value--refunded {
+  color: var(--bq-warning);
+}
+
+.briqpay-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--bq-accent-soft);
+  color: var(--bq-accent);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.briqpay-status--approved {
+  background: var(--bq-positive-soft);
+  color: var(--bq-positive);
+}
+
+.briqpay-status--rejected,
+.briqpay-status--cancelled {
+  background: #fdeeee;
+  color: #a12b2b;
+}
+
+/* Key/value list */
+
+.briqpay-details {
+  margin: 0 0 20px;
+}
+
+.briqpay-details__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bq-line);
+}
+
+.briqpay-details__row:last-child {
+  border-bottom: 0;
+}
+
+.briqpay-details dt {
+  flex: 0 0 180px;
+  font-weight: 500;
+  color: var(--bq-muted);
+}
+
+.briqpay-details dd {
+  flex: 1 1 240px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.briqpay-details__muted {
+  color: var(--bq-muted);
+}
+
+/* Actions */
+
+.briqpay-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  padding-top: 18px;
+  border-top: 1px solid var(--bq-line);
+}
+
+.briqpay-actions__amount {
+  flex: 0 1 240px;
+  min-width: 180px;
+}
+
+.briqpay-actions__amount label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--bq-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.briqpay-actions__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.briqpay-actions__buttons .btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.25;
+}
+
+.briqpay-actions__hint {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.briqpay-actions--empty {
+  padding-top: 16px;
+  margin: 0;
+  border-top: 1px solid var(--bq-line);
+}
+
+/* Hosted payment page */
+
+.briqpay-hpp {
+  padding: 16px;
+  margin-bottom: 20px;
+  background: var(--bq-canvas);
+  border-radius: var(--bq-radius);
+}
+
+.briqpay-hpp__title {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--bq-ink);
+}
+
+.briqpay-hpp .briqpay-copyfield {
+  margin: 10px 0;
+}
+
+.briqpay-hpp .briqpay-copyfield__input {
+  background: var(--bq-surface);
+}
+
+.briqpay-actions--hpp {
+  padding-top: 0;
+  border-top: 0;
+}
+
+@media (max-width: 767px) {
+  .briqpay-hero {
+    padding: 18px;
+  }
+
+  .briqpay-details dt {
+    flex: 1 1 100%;
+  }
+
+  .briqpay-actions__buttons .btn {
+    width: 100%;
+  }
+}
