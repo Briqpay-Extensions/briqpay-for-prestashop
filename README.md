@@ -1,9 +1,10 @@
 # Briqpay for PrestaShop
 
+![Briqpay Logo](https://cdn.briqpay.com/static/images/briqpayLogo.svg)
+
 Accept invoice, card, direct bank and BNPL payments in PrestaShop through a
 single Briqpay integration.
 
-<!-- Point these at the real repository once it exists; see RELEASING.md. -->
 [![CI](https://github.com/Briqpay-Extensions/briqpay-for-prestashop/actions/workflows/ci.yml/badge.svg)](https://github.com/Briqpay-Extensions/briqpay-for-prestashop/actions/workflows/ci.yml)
 
 ## Requirements
@@ -298,17 +299,13 @@ rm var/cache/prod/class_index.php
 
 ## Releasing
 
-Development happens on Bitbucket; releases are published from GitHub. See
-[`RELEASING.md`](RELEASING.md).
-
-```bash
-./scripts/publish.sh dev     # push to Bitbucket
-./scripts/publish.sh prod    # push to GitHub; tags and publishes a release
-```
+Each release is tagged and published as a [GitHub
+Release](https://github.com/Briqpay-Extensions/briqpay-for-prestashop/releases),
+with the module packaged as a downloadable zip.
 
 ## Support
 
-- Documentation: <https://docs.briqpay.com>
+- Documentation: <https://developer.briqpay.com/>
 - Email: <hello@briqpay.com>
 
 ## License

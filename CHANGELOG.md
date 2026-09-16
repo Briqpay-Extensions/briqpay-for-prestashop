@@ -4,6 +4,21 @@ All notable changes to this module are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] — 2026-09-16
+
+### Added
+
+- `LICENSE` file (Academic Free License 3.0 — the repository referenced it
+  from the start, but the file itself was missing).
+
+### Fixed
+
+- Documentation link now points to <https://developer.briqpay.com/>.
+- `Money::toMinorUnits()`'s test suite asserted the wrong result for a
+  binary-midpoint rounding edge case (1.005 → minor units); the assertion
+  now matches the actual, verified behaviour of PHP's `round()` across every
+  PHP version this module supports.
+
 ## [2.0.0] — 2026-09-11
 
 A rewrite. Checkout moves into PrestaShop's native flow, order management gains

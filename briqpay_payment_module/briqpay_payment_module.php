@@ -43,7 +43,7 @@ class Briqpay_Payment_Module extends PaymentModule
     {
         $this->name = 'briqpay_payment_module';
         $this->tab = 'payments_gateways';
-        $this->version = '2.0.0';
+        $this->version = '2.0.1';
         $this->author = 'Briqpay';
         $this->need_instance = 0;
         $this->bootstrap = true;

@@ -38,11 +38,19 @@ class MoneyTest extends TestCase
             'zero' => [0.0, 0],
             'negative discount' => [-49.90, -4990],
             'large amount' => [199999.99, 19999999],
-            // 1.005 is really 1.00499999... so 1.005 * 100 lands just below
-            // the midpoint and rounds down. Documented rather than "fixed":
-            // PrestaShop's own totals are computed the same way, so matching
-            // its behaviour is what keeps the line sums reconciling.
-            'binary midpoint rounds down' => [1.005, 100],
+            // 1.005 is really 1.00499999999999998578..., strictly below the
+            // true midpoint -- but PHP's round() applies its own precision
+            // correction before comparing to the midpoint, and on every PHP
+            // version this module supports (7.2-8.3) that correction treats
+            // the gap as representation noise and rounds up: round(1.005 *
+            // 100) is 101 on 7.4 through 8.3. Documented rather than "fixed":
+            // PrestaShop's own totals are computed the same way on the same
+            // PHP versions, so matching this is what keeps the line sums
+            // reconciling. (PHP 8.4 reworked round()'s internal algorithm and
+            // returns 100 for this input -- outside the range this module
+            // targets. Re-verify this case if the supported range ever moves
+            // past 8.3.)
+            'binary midpoint rounds up on PHP <8.4' => [1.005, 101],
         ];
     }
 

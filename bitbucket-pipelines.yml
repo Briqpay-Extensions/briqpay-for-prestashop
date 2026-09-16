@@ -24,8 +24,16 @@
 # checked -- pure duplication given the only PRs in this repo are dev->prod.
 # Add one back (scoped to whatever isn't dev/prod) if feature branches start
 # merging into dev.
+#
+# Pinned to php:8.1-cli rather than the `composer` image: that image floats
+# to whatever PHP is current (8.5 when this was written), which is outside
+# the range this module supports (7.2-8.3) and actively hid a real bug --
+# Money::toMinorUnits(1.005) rounds differently depending on which side of
+# PHP 8.4 you're on, and the untested-8.5 image only ever exercised the side
+# that isn't what merchants actually run. 8.1 matches release.yml's own gate,
+# so a green run here means the real release gate will also be green.
 
-image: composer:2
+image: php:8.1-cli
 
 definitions:
   caches:
@@ -37,6 +45,10 @@ definitions:
         caches:
           - composer
         script:
+          # curl and json are already built into this image; zip isn't, but
+          # composer falls back to the `unzip` binary to extract packages.
+          - apt-get update -qq && apt-get install -y -qq git unzip >/dev/null
+          - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer --quiet
           - composer install --no-interaction --prefer-dist
           - composer check
 
@@ -52,12 +64,12 @@ pipelines:
           caches:
             - composer
           script:
-            # composer.lock is already resolved and cached from the checks
-            # step above (same pipeline run); `vendor/` is not persisted
-            # between steps, so reinstall from it rather than passing an
-            # artifact -- cheap, since the composer cache carries over.
+            # Each step is a fresh container -- `vendor/` from the checks
+            # step above isn't carried over, so the composer tooling is set
+            # up again here. Cheap: the composer cache does carry over.
+            - apt-get update -qq && apt-get install -y -qq git unzip openssh-client >/dev/null
+            - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer --quiet
             - composer install --no-interaction --prefer-dist
-            - apk add --no-cache openssh-client >/dev/null
             - mkdir -p ~/.ssh && chmod 700 ~/.ssh
             - ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2>/dev/null
             - git config user.name "Briqpay Release Bot"

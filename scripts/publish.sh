@@ -49,8 +49,10 @@ readonly GITHUB_BRANCH_DEFAULT="main"
 readonly CI="${CI:-}"
 
 # Paths that stay internal. They live on Bitbucket but are stripped out of
-# everything pushed to GitHub, which merchants can see.
-readonly PRIVATE_PATHS=(docker)
+# everything pushed to GitHub, which merchants can see. RELEASING.md
+# describes internal infrastructure (Bitbucket, the dev/prod pipeline, the
+# GitHub deploy key) that has no reason to be visible on the public repo.
+readonly PRIVATE_PATHS=(docker RELEASING.md)
 
 cd "$ROOT"
 

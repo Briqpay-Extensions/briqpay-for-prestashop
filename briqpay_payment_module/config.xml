@@ -2,7 +2,7 @@
 <module>
     <name>briqpay_payment_module</name>
     <displayName><![CDATA[Briqpay Payments]]></displayName>
-    <version><![CDATA[2.0.0]]></version>
+    <version><![CDATA[2.0.1]]></version>
     <description><![CDATA[Accept invoice, card, direct bank and BNPL payments through a single Briqpay integration.]]></description>
     <author><![CDATA[Briqpay]]></author>
     <tab><![CDATA[payments_gateways]]></tab>
