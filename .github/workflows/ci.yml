@@ -229,7 +229,7 @@ jobs:
             -e PS_INSTALL_AUTO=1 \
             -e PS_ERASE_DB=0 \
             -e PS_DEV_MODE=0 \
-            -e PS_DOMAIN=localhost:8080 \
+            -e PS_DOMAIN=localhost \
             -e PS_FOLDER_ADMIN=admin-dev \
             -e ADMIN_MAIL=admin@briqpay.test \
             -e ADMIN_PASSWD=briqpay123 \
@@ -240,7 +240,7 @@ jobs:
       - name: Wait for the install to finish
         run: |
           for i in $(seq 1 120); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ || true)
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost/ || true)
             if [ "$code" = "200" ] || [ "$code" = "302" ]; then
               echo "PrestaShop is up after ${i}0s"
               exit 0
@@ -326,7 +326,7 @@ jobs:
 
       - name: Check the webhook endpoint answers
         run: |
-          URL="http://localhost:8080/index.php?fc=module&module=briqpay_payment_module&controller=webhook"
+          URL="http://localhost/index.php?fc=module&module=briqpay_payment_module&controller=webhook"
 
           code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$URL" \
             -H 'Content-Type: application/json' -d 'not json')
