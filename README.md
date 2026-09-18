@@ -31,11 +31,11 @@ playground environment, which uses separate credentials.
 Briqpay renders as a normal PrestaShop payment option, so shoppers stay inside
 the native checkout:
 
-```
-1 Personal information   PrestaShop
-2 Addresses              PrestaShop
-3 Shipping method        PrestaShop
-4 Payment             →  Briqpay iframe
+```mermaid
+flowchart LR
+    A["1 · Personal information<br/>PrestaShop"] --> B["2 · Addresses<br/>PrestaShop"]
+    B --> C["3 · Shipping method<br/>PrestaShop"]
+    C --> D["4 · Payment<br/>Briqpay iframe"]
 ```
 
 With **Replace the payment method list** enabled (the default), the iframe takes
@@ -47,15 +47,14 @@ Nothing is hidden or disabled up front: the shopper sees every payment method
 immediately. Validation happens at Briqpay's **decision step** — the pause
 after the shopper presses pay but before any money moves:
 
-```
-shopper presses "Complete purchase"
-        │
-        ▼
-  Briqpay pauses ──► POST /decision
-        │
-        ├─ terms unticked?   → reject, reason shown in the iframe
-        ├─ totals drifted?   → reject, reason shown in the iframe
-        └─ otherwise         → allow, payment proceeds
+```mermaid
+flowchart TD
+    A["Shopper presses<br/>'Complete purchase'"] --> B["Briqpay pauses<br/>POST /decision"]
+    B --> C{"Terms unticked?"}
+    C -->|Yes| R1["Reject — reason shown in the iframe"]
+    C -->|No| D{"Totals drifted?"}
+    D -->|Yes| R2["Reject — reason shown in the iframe"]
+    D -->|No| E["Allow — payment proceeds"]
 ```
 
 The module asks for that pause itself, per session, so it works without any
